@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "绑定手机",
+  "navigationBarBackgroundColor": "#345dc2",
+  "usingComponents": {
+    "wyk-code": "/components/wyk-code/wyk-code"
+  }
+}

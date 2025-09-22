@@ -1,0 +1,5 @@
+
+.list-container {
+	padding: 0 30rpx;
+}
+

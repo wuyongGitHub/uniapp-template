@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "确认购买",
+  "usingComponents": {
+    "course-item": "/components/common/course-item"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "navigationBarBackgroundColor": "#345DC2",
+  "navigationBarTextStyle": "white",
+  "usingComponents": {
+    "mescroll-body": "/uni_modules/mescroll-uni/components/mescroll-body/mescroll-body",
+    "search-input": "/components/common/search-input",
+    "banner": "/components/common/banner",
+    "swiper-course": "/pages/index/components/swiper-course",
+    "category-box": "/pages/index/components/category-box",
+    "scroll-course": "/pages/index/components/scroll-course",
+    "list-course": "/pages/index/components/list-course"
+  }
+}

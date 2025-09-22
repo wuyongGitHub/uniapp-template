@@ -1,0 +1,3 @@
+<view><view class="column center"><image class="logo" src="/static/images/logo-black.png" lazy-load="{{true}}" mode="widthFix"></image><text class="version">Version 1.0.0</text></view><view class="center-content"><view class="_p">梦学谷是专注于在线教育平台，聚合了优秀教师的海量精品课程。在这里，您可以在线观看视频
+			教程；您可以随时随地向名师请教；您可以与大量志同道合的同学进行交流。</view><view class="_p">打破地域的限制，让每个立志学习，有梦想的人，都能接受优秀教师的指导和教学；同时希望给
+			优秀的教师一个展示的平台。</view><view class="_p">梦学谷——陪你学习，伴你梦想！</view></view><view class="bottom">{{"Copyright © "+$root.g0+" mengxuegu.com\n\t\tAll rights reserved"}}</view></view>

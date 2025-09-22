@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "我的",
+  "navigationBarTextStyle": "white",
+  "navigationBarBackgroundColor": "#345DC2",
+  "backgroundColorTop": "#345DC2",
+  "backgroundColorBottom": "#FFFFFF",
+  "usingComponents": {
+    "wyk-list": "/components/wyk-list/wyk-list"
+  }
+}

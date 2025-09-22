@@ -1,0 +1,7 @@
+
+page,
+.container-list {
+	height: 100%;
+	overflow: hidden;
+}
+

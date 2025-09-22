@@ -1,0 +1,462 @@
+<template>
+	<view class="video-box">
+		<view :style="{ height: statusBarHeight + 'rpx'}"></view>
+		<!--
+			poster 视频封面的图片网络资源地址
+			src 要播放视频的资源地址
+			show-center-play-btn 是否显示视频中间的播放按钮
+			show-fullscreen-btn 是否显示全屏按钮
+			show-progress 是否显示进度条
+			:controls="false" 取消默认控制按钮
+			@timeupdate 播放进度变化时触发
+			@ended 当播放到末尾时触发
+		-->
+		<video ref="video" class="video" :poster="videoMedia.mainImage" :src="videoMedia.videoUrl" :controls="false"
+			:show-center-play-btn="false" :show-fullscreen-btn="false" :show-progress="false" @timeupdate="timeupdate"
+			@ended="nextPlay">
+
+			<view class="view-box" :style="{width: `${controlsWidth}px`,height:`${videoHeight}`}">
+				<cover-view class="controls-top row" ref="controlsTop" v-if="showControls"
+					:style="{width: `${controlsWidth}px`}">
+					<!-- 如果图标没有效果，则删除了重新添加 -->
+					<text class="iconfont" @click.stop="backHandler">&#xe679;</text>
+					<text class="title">{{videoMedia.title}}</text>
+				</cover-view>
+				<!-- 中间区域，暂停播放按钮 -->
+				<cover-view class="controls-center center" @click="showHideControls" :style="{width: `${controlsWidth}px`}">
+					<text class="stop iconfont" @click.stop="playVideo" v-if="!play && showControls">&#xe625;</text>
+				</cover-view>
+				<!-- 底部 -->
+				<cover-view ref="controlsBottom" class="controls-bottom row center" v-if="showControls"
+					:style="{width: `${controlsWidth}px`}">
+					<view class="row">
+						<!-- 播放 -->
+						<text @click="playVideo" v-if="!play" class="video-btn iconfont">&#xe625;</text>
+						<!-- 暂停 -->
+						<text @click="playVideo" v-if="play" class="video-btn iconfont">&#xe62c;</text>
+						<!-- 下一集 -->
+						<text class="video-btn iconfont">&#xe61b;</text>
+					</view>
+					<!-- 当前播放时长 -->
+					<text class="time">{{currentStr}}</text>
+					<view class="bottom-slider">
+						<!-- 当前观看所在时长 -->
+						<!-- 进度条 -->
+						<slider-bar :duration="duration" :current="current" :sliderWidth="sliderWidth"
+							:direction="fullScreen ? 'screenY': 'screenX'" @change="change" :rate="parseFloat(currentRate)" />
+					</view>
+					<!-- 总时长 -->
+					<text class="time">{{durationStr}}</text>
+					<view class="row">
+						<!-- 倍速 -->
+						<text class="video-btn" @click.stop="showHideRateView">{{currentRate}}</text>
+						<!-- 全屏 -->
+						<text v-if="!fullScreen" class="video-btn iconfont" @click.stop="fullScreenHandler">&#xe623;</text>
+						<text v-if="fullScreen" class="video-btn iconfont" @click.stop="fullScreenHandler">&#xe61e;</text>
+					</view>
+				</cover-view>
+				<!-- 加速列表 -->
+				<cover-view v-if="rateView" class="center" :class="fullScreen ? 'rate-list-full': 'rate-list'"
+					:style="{height: fullScreen ? controlsHeight: null}">
+					<!-- 注意active样式放最后，不然不生效，会被覆盖 -->
+					<text :class="{'rate-item-full' : fullScreen, 'rate-item': !fullScreen, 'active': rate=== currentRate}"
+						v-for="(rate, index) in rates" :key="index" @click.stop="clickRate(rate)">{{rate}}x</text>
+				</cover-view>
+			</view>
+		</video>
+	</view>
+</template>
+<script>
+	import sliderBar from './components/slider-bar.nvue';
+	// 当前video实例
+	let videoContext = null
+	// timer定时器
+	let timer = null
+	export default {
+		components: {
+			sliderBar
+		},
+		data() {
+			return {
+				rates: ['0.8', '1.0', '1.25', '1.5', '2.0'], // ios不支持1.25和1.5
+				currentRate: '1.0', // 当前倍速率
+				rateView: false, // 是否显示倍速视图
+				videoHeight: '225px',
+				fullScreen: false, // 全屏状态
+				controlsWidth: 0, //全屏宽
+				controlsHeight: 0, //全屏高
+				duration: 1, // 视频总时长（秒），默认1秒显示进度条
+				current: 0, //当前播放时长（秒）
+				statusBarHeight: 0, // 状态栏高度
+				play: false, //播放状态
+				showControls: true, // 控制层显示隐藏
+				videoMedia: {
+					id: 1,
+					title: '01_视频组件封装',
+					videoUrl: "https://qiniu-web-assets.dcloud.net.cn/unidoc/zh/2minute-demo.mp4",
+					mainImage: "https://img0.baidu.com/it/u=2194549562,137574782&fm=253&fmt=auto&app=120&f=JPEG?w=889&h=500",
+				},
+				chapterList: [], //课程列表数据
+				activeObj: {}, // 当前选中的课程下标
+			}
+		},
+		onLoad() {
+			// 获取状态栏高度
+			const systemInfo = uni.getSystemInfoSync();
+			this.statusBarHeight = Math.floor(systemInfo.statusBarHeight * (750 / systemInfo.screenWidth));
+			// 屏幕宽高
+			this.controlsHeight = systemInfo.screenHeight
+			this.controlsWidth = systemInfo.screenWidth
+
+			// 监听其他页面传递的数据
+			uni.$on('video', this.videoHandlerEvent)
+		},
+		beforeCreate() {
+			// nvue文件 加载图标，在style中声明 .ionfont样式
+			const domModule = uni.requireNativePlugin('dom');
+			domModule.addRule('fontFace', {
+				fontFamily: 'iconfont',
+				// 推荐使用 ~@ 开头，发布时需要变成https://开头的
+				src: "url('~@/static/icon/iconfont.ttf')"
+			});
+		},
+		onUnload() {
+			// 卸载页面时，移除监听事件 
+			uni.$off('video')
+		},
+		watch: {
+			fullScreen(newVal, oldVal) { // 获取当前的宽度。用于交换宽高，
+				const width = this.controlsWidth
+				this.controlsWidth = this.controlsHeight
+				this.controlsHeight = width
+				if (this.fullScreen) {
+					this.videoHeight = width + 'px'
+				} else {
+					this.videoHeight = 225 + 'px'
+				}
+			},
+		},
+		mounted() {
+			// 注意，在 subNvue中要使用这种方式获取video实例
+			videoContext = this.$refs.video
+		},
+		computed: {
+			// 总时长，分钟:秒
+			durationStr() {
+				return this.formatSeconds(this.duration)
+			},
+			// 当前时长 分钟:秒
+			currentStr() {
+				return this.formatSeconds(this.current)
+			},
+			// 进度条长度
+			sliderWidth() {
+				return this.controlsWidth - uni.upx2px(320 + 220)
+			}
+		},
+		methods: {
+			// course-play页面会传递数据进行触发到此方法
+			videoHandlerEvent(e) {
+				// console.log('接收到其他页面传递的数据', e)
+				switch (e.type) {
+					case 'init':
+						// 初始化数据
+						const course = e.params.course
+						this.videoMidea.mainImage = course.mainImage
+						this.videoMidea.id = course.id
+						console.log('this.videoMidea.mainImage', this.videoMidea.mainImage)
+						// 选中下标
+						this.activeObj = e.params.activeObj
+						// 课程列表
+						this.chapterList = e.params.chapterList
+						//获取第1节课
+						const chapter = this.chapterList[this.activeObj.chapterIndex]
+						const section = chapter && chapter.sectionList[this.activeObj.sectionIndex]
+						if (section) {
+							this.videoMidea.videoUrl = section.videoUrl || ''
+							this.videoMidea.title = section.name
+						}
+						break;
+					case 'change':
+						// 当前播放的下标，为了播放下一节课
+						this.activeObj = e.params.activeObj
+						// 播放视频
+						this.playSection(e.params.section)
+						break;
+					default:
+						break;
+				}
+			},
+			// 播放到当前视频未尾，播放下一节
+			nextPlay() {
+				// 1. 获取当前章的下一节课，有一下课，则播放一下节
+				let chapter = this.chapterList[this.activeObj.chapterIndex]
+				let section = chapter && chapter.sectionList[this.activeObj.sectionIndex + 1]
+				if (section && section.videoUrl) {
+					// 播放当前章的下一节课
+					this.activeObj.sectionIndex++
+					this.playSection(section)
+				} else {
+					// 2. 当前章没有一下节课，播放下一章第一节课
+					chapter = this.chapterList[this.activeObj.chapterIndex + 1]
+					if (chapter && chapter.sectionList && chapter.sectionList.length > 0) {
+						// 下一章第1节课
+						this.activeObj.chapterIndex++
+						this.activeObj.sectionIndex = 0
+						section = chapter.sectionList[this.activeObj.sectionIndex]
+						// 播放视频
+						this.playSection(section)
+					} else {
+						// 3. 没有一下章节(末尾)，暂停视频，提示：已观看最后一节课
+						videoContext.pause()
+						uni.showToast({
+							title: '已观看最后一节课',
+							icon: 'none'
+						})
+						this.play = false
+						this.showControls = true
+					}
+				}
+			},
+			// 播放指定视频
+			playSection(section) {
+				if (section && section.videoUrl) {
+					// 暂停
+					videoContext.pause()
+					// 获取新的播放地址
+					this.videoMidea.videoUrl = section.videoUrl
+					this.videoMidea.title = section.name
+					// 播放
+					setTimeout(() => {
+						videoContext.play()
+						this.play = true
+					}, 300)
+				} else {
+					uni.showToast({
+						title: '视频资源不存在',
+						icon: 'none'
+					})
+				}
+			},
+			// 显示隐藏倍速窗口
+			showHideRateView() {
+				this.rateView = !this.rateView
+			},
+			// 倍速播放
+			clickRate(rate) {
+				this.currentRate = rate
+				// 设置倍速，注意转浮点数
+				videoContext.playbackRate(parseFloat(rate))
+				// 关闭倍速选项弹层
+				this.showHideRateView()
+			},
+			// 拖动进度条结束的时候触发，返回结束的秒数
+			change(currentSecond) {
+				console.log("我是拖动时间currentSecond", currentSecond)
+				this.current = currentSecond
+				// 跳转到指定秒数
+				videoContext.seek(currentSecond)
+			},
+			// 点击全屏
+			fullScreenHandler() {
+				// 强制底部控件重新定位
+				this.$nextTick(() => {
+					if (this.fullScreen) {
+						//退出全屏
+						videoContext.exitFullScreen()
+					} else {
+						// 进入全屏
+						videoContext.requestFullScreen()
+					}
+					// 改变状态
+					this.fullScreen = !this.fullScreen
+				});
+			},
+			// 播放进度变化时触发，获取视频时长、当前播放时长
+			timeupdate(event) {
+				this.duration = event.detail.duration
+				this.current = event.detail.currentTime
+			},
+			/**
+			 * 格式化时间 分钟:秒
+			 * @param {Object} totalSecond 总秒数
+			 */
+			formatSeconds(totalSecond) {
+				let minute = parseInt(totalSecond / 60);
+				if (minute < 10) minute = "0" + minute;
+				let second = parseInt(totalSecond % 60);
+				if (second < 10) second = "0" + second;
+				let time = minute + ":" + second;
+				if (totalSecond >= 0) {
+					return time;
+				} else {
+					return "00:00";
+				}
+			},
+			// 播放到末尾，切换下一节
+			nextPlay() {},
+			// 点击后退按钮
+			backHandler() {
+				// 点击头部后退图标
+				if (this.fullScreen) {
+					// 全屏时，回到非全屏状态，
+					this.fullScreenHandler()
+				} else {
+					// 非全屏时，返回上一页面
+					uni.navigateBack()
+				}
+			},
+			// 播放视频
+			playVideo() {
+				if (this.play) {
+					// 暂停
+					videoContext.pause()
+				} else {
+					// 播放视频
+					videoContext.play()
+					// 隐藏控制层
+					this.showHideControls()
+				}
+				this.play = !this.play
+			},
+			showHideControls() {
+				this.showControls = !this.showControls
+				// 倍速视图
+				this.rateView = false
+				// 定时隐藏控制层
+				if (this.showControls) {
+					//清除原有定时器
+					timer = timer ? clearTimeout(timer) : null
+					// 3秒后隐藏控制层
+					timer = setTimeout(() => {
+						this.showControls = false
+					}, 3000)
+				}
+			}
+		}
+	}
+</script>
+<style>
+	.view-box {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+	}
+
+	.iconfont {
+		font-family: iconfont;
+		/* iconfont 对应上面 fontFamily 的值, */
+		font-size: 50rpx;
+		color: #FFFFFF;
+	}
+
+	.video {
+		width: 750rpx;
+		/* height: 225px; */
+	}
+
+	/* 头部控制层 */
+	.controls-top {
+		height: 90rpx;
+		padding: 0 15rpx;
+		align-items: center;
+		background-image: linear-gradient(to top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.8));
+	}
+
+	.title {
+		font-size: 30rpx;
+		color: #FFFFFF;
+		width: 500rpx;
+		/*nvue 文件中，文本溢出显示省略号*/
+		lines: 1;
+		text-overflow: ellipsis;
+	}
+
+	/* 中间区域 */
+	.controls-center {
+		position: absolute;
+		top: 90rpx;
+		left: 0;
+		right: 0;
+		bottom: 90rpx;
+		/* 透明背景占位，防止ios渐变有问题 */
+		background-color: rgba(0, 0, 0, 0);
+	}
+
+	.stop {
+		padding: 20rpx 35rpx;
+		background-color: rgba(0, 0, 0, 0.6);
+		border-radius: 10px;
+	}
+
+	/* 底部控制 */
+	.controls-bottom {
+		position: absolute;
+		bottom: 0;
+		width: 750rpx;
+		height: 90rpx;
+		background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.8));
+	}
+
+	.video-btn {
+		width: 80rpx;
+		line-height: 90rpx;
+		text-align: center;
+		color: #fff;
+		font-size: 30rpx;
+	}
+
+	.bottom-slider {
+		flex-direction: row;
+		align-items: center;
+		height: 90rpx;
+		/* 左右固定了宽度，中间占满剩余宽度 */
+		flex: 1;
+		text-align: center;
+	}
+
+	.time {
+		font-size: 28rpx;
+		color: #FFFFFF;
+		width: 110rpx;
+		text-align: center;
+	}
+
+	/* 非全屏倍速样式 */
+	.rate-list {
+		position: absolute;
+		bottom: 70rpx;
+		right: 65rpx;
+		background-color: rgba(0, 0, 0, 0.7);
+		width: 110rpx;
+		border-radius: 10rpx;
+	}
+
+	.rate-item {
+		color: #FFFFFF;
+		font-size: 35rpx;
+		line-height: 60rpx;
+	}
+
+	.active {
+		color: #345dc2;
+	}
+
+	/* 全屏倍速样式 */
+	.rate-list-full {
+		width: 400rpx;
+		background-color: rgba(0, 0, 0, 0.7);
+		position: absolute;
+		right: 0;
+		top: 0;
+		bottom: 0;
+	}
+
+	.rate-item-full {
+		color: #FFFFFF;
+		font-size: 50rpx;
+		line-height: 130rpx;
+	}
+</style>

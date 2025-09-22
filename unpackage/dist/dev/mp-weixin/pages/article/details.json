@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "",
+  "backgroundColor": "#FFFFFF",
+  "usingComponents": {
+    "share": "/components/share/share"
+  }
+}

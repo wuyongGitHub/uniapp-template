@@ -1,0 +1,15 @@
+
+image {
+	width: 100%;
+}
+.loading {
+	height: 90rpx;
+	width: 90rpx;
+	margin-top: 50rpx;
+}
+.footer-text {
+	font-size: 30rpx;
+	color: #777777;
+	margin: 20rpx 0;
+}
+

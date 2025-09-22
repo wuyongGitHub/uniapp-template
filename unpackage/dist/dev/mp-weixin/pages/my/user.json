@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "个人资料",
+  "navigationBarTextStyle": "white",
+  "navigationBarBackgroundColor": "#345dc2",
+  "usingComponents": {
+    "wyk-list": "/components/wyk-list/wyk-list"
+  }
+}

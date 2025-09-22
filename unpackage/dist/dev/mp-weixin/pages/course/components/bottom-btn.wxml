@@ -1,0 +1,1 @@
+<view data-event-opts="{{[['tap',[['clickHandler',['$event']]]]]}}" class="bottom center" bindtap="__e"><text class="bottom-btn">{{btnText}}</text></view>

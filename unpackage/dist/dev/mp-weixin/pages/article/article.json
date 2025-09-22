@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "阅读",
+  "navigationBarTextStyle": "white",
+  "navigationBarBackgroundColor": "#345DC2",
+  "usingComponents": {
+    "tab-bar": "/components/common/tab-bar",
+    "mescroll-item": "/pages/article/component/mescroll-swiper-item"
+  }
+}

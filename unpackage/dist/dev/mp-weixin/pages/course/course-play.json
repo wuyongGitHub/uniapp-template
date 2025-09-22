@@ -1,0 +1,5 @@
+{
+  "usingComponents": {
+    "course-dir": "/pages/course/components/course-dir"
+  }
+}

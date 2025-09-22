@@ -1,0 +1,8 @@
+{
+  "navigationBarTextStyle": "white",
+  "navigationBarBackgroundColor": "#345dc2",
+  "navigationBarTitleText": "设置",
+  "usingComponents": {
+    "wyk-list": "/components/wyk-list/wyk-list"
+  }
+}

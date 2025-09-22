@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "问答",
+  "navigationBarTextStyle": "white",
+  "navigationBarBackgroundColor": "#345DC2",
+  "usingComponents": {
+    "tab-bar": "/components/common/tab-bar",
+    "mescroll-item": "/pages/question/components/question-swiper-item.vue"
+  }
+}

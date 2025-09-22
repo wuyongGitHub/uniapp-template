@@ -1,0 +1,1 @@
+<view><view class="center column"><image src="/static/images/no.png" lazy-load="{{true}}" mode="aspectFill"></image><text class="title">{{desc}}</text></view></view>

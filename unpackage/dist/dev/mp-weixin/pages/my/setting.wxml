@@ -1,0 +1,1 @@
+<view><wyk-list vue-id="2dcb8e20-1" list="{{list}}" data-event-opts="{{[['^setWifiPlay',[['setWifiPlay']]],['^setWifiDownload',[['setWifiDownload']]],['^setAutoPlay',[['setAutoPlay']]],['^clearStorage',[['clearStorage']]]]}}" bind:setWifiPlay="__e" bind:setWifiDownload="__e" bind:setAutoPlay="__e" bind:clearStorage="__e" bind:__l="__l"></wyk-list></view>
